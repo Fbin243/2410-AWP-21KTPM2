@@ -4,8 +4,11 @@ import { SquareStatus, TABLE_SIZE } from "./utils/types";
 
 function App() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [table, setTable] = useState(Array(TABLE_SIZE).fill(Array(TABLE_SIZE).fill(SquareStatus.Empty)));
+  const [table, setTable] = useState<SquareStatus[][]>(
+    Array(TABLE_SIZE).fill(Array(TABLE_SIZE).fill(SquareStatus.Empty))
+  );
   const [winner, setWinner] = useState<SquareStatus | null>(null);
+  const [history, setHistory] = useState<Array<[number, number]>>([]);
 
   const handleClickOnSquare = (rowIndex: number, cellIndex: number) => {
     if (table[rowIndex][cellIndex] !== SquareStatus.Empty || winner) {
@@ -13,40 +16,80 @@ function App() {
     }
 
     setCurrentStep(currentStep + 1);
-    const updatedTable = table.map((row) => [...row]);
-    updatedTable[rowIndex][cellIndex] = currentStep % 2 === 0 ? "X" : "O";
+    const updatedTable: SquareStatus[][] = table.map((row) => [...row]);
+    updatedTable[rowIndex][cellIndex] = currentStep % 2 === 0 ? SquareStatus.X : SquareStatus.O;
+    console.log("Update table", updatedTable);
     setTable(updatedTable);
     setWinner(calculateWinner(updatedTable));
+    setHistory([...history, [rowIndex, cellIndex]]);
+    console.log("History", history);
+  };
+
+  const jumpTo = (move: number) => {
+    setCurrentStep(move + 1);
+    setWinner(null);
+
+    const newHistory = history.slice(0, move + 1);
+    setHistory(newHistory);
+
+    // const newTable: SquareStatus[][] = Array(TABLE_SIZE).fill(Array(TABLE_SIZE).fill(SquareStatus.Empty));
+
+    const newTable: SquareStatus[][] = Array.from({ length: TABLE_SIZE }, () =>
+      Array(TABLE_SIZE).fill(SquareStatus.Empty)
+    );
+    for (const item of newHistory) {
+      const [rowIndex, cellIndex] = item;
+      newTable[rowIndex][cellIndex] = table[rowIndex][cellIndex];
+    }
+
+    setTable(newTable);
   };
 
   return (
-    <>
-      <h3>You are at move #{currentStep}</h3>
-      {winner ? (
-        <h3>{winner} wins!</h3>
-      ) : currentStep === TABLE_SIZE * TABLE_SIZE ? (
-        <h3>It's a draw!</h3>
-      ) : (
-        <h3>Next player: {currentStep % 2 === 0 ? SquareStatus.X : SquareStatus.O}</h3>
-      )}
-      {table.map((row, rowIndex) => {
-        return (
-          <div key={rowIndex} className="board-row">
-            {row.map((cell: SquareStatus, cellIndex: number) => {
-              return (
-                <Square
-                  key={cellIndex}
-                  onClick={handleClickOnSquare}
-                  value={cell}
-                  rowIndex={rowIndex}
-                  cellIndex={cellIndex}
-                />
-              );
-            })}
-          </div>
-        );
-      })}
-    </>
+    <div className="flex justify-center items-center h-screen">
+      <div className="relative">
+        <h3>You are at move #{currentStep + 1}</h3>
+        {winner ? (
+          <h3>{winner} wins!</h3>
+        ) : currentStep === TABLE_SIZE * TABLE_SIZE ? (
+          <h3>It's a draw!</h3>
+        ) : (
+          <h3>Turn of {currentStep % 2 === 0 ? SquareStatus.X : SquareStatus.O}</h3>
+        )}
+        {table.map((row, rowIndex) => {
+          return (
+            <div key={rowIndex} className="board-row">
+              {row.map((cell: SquareStatus, cellIndex: number) => {
+                return (
+                  <Square
+                    key={cellIndex}
+                    onClick={handleClickOnSquare}
+                    value={cell}
+                    rowIndex={rowIndex}
+                    cellIndex={cellIndex}
+                  />
+                );
+              })}
+            </div>
+          );
+        })}
+        <ol className="absolute left-[120%] top-0 min-w-[200px]">
+          {history.map((step, move) => {
+            const player = move % 2 === 0 ? SquareStatus.X : SquareStatus.O;
+            const desc = ` ${player} played at [${step[0]}, ${step[1]}]`;
+            return (
+              <li key={move}>
+                <button
+                  className="mb-2 bg-red-300 border-red-900 border-solid border"
+                  onClick={() => jumpTo(move)}
+                >{`Move #${move + 1} `}</button>{" "}
+                {desc}
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </div>
   );
 }
 
