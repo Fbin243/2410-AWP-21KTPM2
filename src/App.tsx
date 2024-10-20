@@ -8,6 +8,7 @@ function App() {
     Array(TABLE_SIZE).fill(Array(TABLE_SIZE).fill(SquareStatus.Empty))
   );
   const [winner, setWinner] = useState<SquareStatus | null>(null);
+  const [winnerSquares, setWinnerSquares] = useState<Array<number>>([]);
   const [history, setHistory] = useState<Array<[number, number]>>([]);
 
   const handleClickOnSquare = (rowIndex: number, cellIndex: number) => {
@@ -18,18 +19,20 @@ function App() {
     setCurrentStep(currentStep + 1);
     const updatedTable: SquareStatus[][] = table.map((row) => [...row]);
     updatedTable[rowIndex][cellIndex] = currentStep % 2 === 0 ? SquareStatus.X : SquareStatus.O;
-    console.log("Update table", updatedTable);
     setTable(updatedTable);
-    setWinner(calculateWinner(updatedTable));
+
+    const [_winner, winningSquares] = calculateWinner(updatedTable);
+    setWinner(_winner);
+    setWinnerSquares(winningSquares);
     setHistory([...history, [rowIndex, cellIndex]]);
-    console.log("History", history);
   };
 
   const jumpTo = (move: number) => {
-    setCurrentStep(move + 1);
+    setCurrentStep(move);
     setWinner(null);
+    setWinnerSquares([]);
 
-    const newHistory = history.slice(0, move + 1);
+    const newHistory = history.slice(0, move);
     setHistory(newHistory);
 
     // const newTable: SquareStatus[][] = Array(TABLE_SIZE).fill(Array(TABLE_SIZE).fill(SquareStatus.Empty));
@@ -48,13 +51,23 @@ function App() {
   return (
     <div className="flex justify-center items-center h-screen">
       <div className="relative">
-        <h3>You are at move #{currentStep + 1}</h3>
         {winner ? (
-          <h3>{winner} wins!</h3>
+          <h3>
+            Game finished.
+            <br /> {winner} wins!
+          </h3>
         ) : currentStep === TABLE_SIZE * TABLE_SIZE ? (
-          <h3>It's a draw!</h3>
+          <h3>
+            Game finished.
+            <br />
+            It's a draw!
+          </h3>
         ) : (
-          <h3>Turn of {currentStep % 2 === 0 ? SquareStatus.X : SquareStatus.O}</h3>
+          <h3>
+            You are at move #{currentStep + 1}
+            <br />
+            Turn of {currentStep % 2 === 0 ? SquareStatus.X : SquareStatus.O}
+          </h3>
         )}
         {table.map((row, rowIndex) => {
           return (
@@ -62,6 +75,7 @@ function App() {
               {row.map((cell: SquareStatus, cellIndex: number) => {
                 return (
                   <Square
+                    winnerSquares={winnerSquares}
                     key={cellIndex}
                     onClick={handleClickOnSquare}
                     value={cell}
@@ -74,6 +88,9 @@ function App() {
           );
         })}
         <ol className="absolute left-[120%] top-0 min-w-[200px]">
+          <button className="mb-2 bg-red-300 border-red-900 border-solid border" onClick={() => jumpTo(0)}>
+            Reset game
+          </button>
           {history.map((step, move) => {
             const player = move % 2 === 0 ? SquareStatus.X : SquareStatus.O;
             const desc = ` ${player} played at [${step[0]}, ${step[1]}]`;
@@ -81,7 +98,7 @@ function App() {
               <li key={move}>
                 <button
                   className="mb-2 bg-red-300 border-red-900 border-solid border"
-                  onClick={() => jumpTo(move)}
+                  onClick={() => jumpTo(move + 1)}
                 >{`Move #${move + 1} `}</button>{" "}
                 {desc}
               </li>
@@ -93,7 +110,7 @@ function App() {
   );
 }
 
-function calculateWinner(table: SquareStatus[][]): SquareStatus | null {
+function calculateWinner(table: SquareStatus[][]): [SquareStatus | null, Array<number>] {
   const lines = [
     [0, 1, 2],
     [3, 4, 5],
@@ -112,10 +129,10 @@ function calculateWinner(table: SquareStatus[][]): SquareStatus | null {
     const cell3 = table[Math.floor(c / TABLE_SIZE)][c % TABLE_SIZE];
 
     if (cell1 !== SquareStatus.Empty && cell1 === cell2 && cell1 === cell3) {
-      return cell1;
+      return [cell1, [a, b, c]];
     }
   }
-  return null;
+  return [null, []];
 }
 
 export default App;
