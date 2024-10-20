@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Square from "./components/Square";
-import { SquareStatus, TABLE_SIZE } from "./utils/types";
+import Toggle from "./components/ToggleButton";
+import { SortOrder, SquareStatus, TABLE_SIZE } from "./utils/types";
 
 function App() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -10,6 +11,13 @@ function App() {
   const [winner, setWinner] = useState<SquareStatus | null>(null);
   const [winnerSquares, setWinnerSquares] = useState<Array<number>>([]);
   const [history, setHistory] = useState<Array<[number, number]>>([]);
+  const [sortBy, setSortBy] = useState<SortOrder>(SortOrder.Ascending);
+
+  const handleToggleButton = () => {
+    console.log("toggle button clicked");
+    setSortBy((prevSortBy) => (prevSortBy == SortOrder.Ascending ? SortOrder.Descending : SortOrder.Ascending));
+    setHistory((prevHistory) => [...prevHistory].reverse());
+  };
 
   const handleClickOnSquare = (rowIndex: number, cellIndex: number) => {
     if (table[rowIndex][cellIndex] !== SquareStatus.Empty || winner) {
@@ -88,12 +96,18 @@ function App() {
           );
         })}
         <ol className="absolute left-[120%] top-0 min-w-[200px]">
+          <Toggle sortBy={sortBy} onToggle={handleToggleButton} />
           <button className="mb-2 bg-red-300 border-red-900 border-solid border" onClick={() => jumpTo(0)}>
             Reset game
           </button>
           {history.map((step, move) => {
+            if (sortBy === SortOrder.Descending) {
+              move = history.length - move - 1;
+            }
+            
             const player = move % 2 === 0 ? SquareStatus.X : SquareStatus.O;
             const desc = ` ${player} played at [${step[0]}, ${step[1]}]`;
+
             return (
               <li key={move}>
                 <button

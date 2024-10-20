@@ -4,4 +4,9 @@ export enum SquareStatus {
   O = "O",
 }
 
+export enum SortOrder {
+  Ascending = "Ascending",
+  Descending = "Descending",
+}
+
 export const TABLE_SIZE = 3;
